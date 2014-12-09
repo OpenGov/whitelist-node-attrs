@@ -6,9 +6,9 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -59,6 +59,12 @@ class Chef
     alias_method :old_save, :save
 
     def save
+      Chef::Log.info('Temporarily saving node attributes before applying whitelist')
+      wl_default_attrs = self.default_attrs
+      wl_normal_attrs = self.normal_attrs
+      wl_override_attrs = self.override_attrs
+      wl_automatic_attrs = self.automatic_attrs
+
       Chef::Log.info("Whitelisting node attributes")
       whitelist = self[:whitelist].to_hash
       self.default_attrs = ::Whitelist.filter(self.default_attrs, whitelist)
@@ -66,7 +72,12 @@ class Chef
       self.override_attrs = ::Whitelist.filter(self.override_attrs, whitelist)
       self.automatic_attrs = ::Whitelist.filter(self.automatic_attrs, whitelist)
       old_save
+
+      Chef::Log.info('Restoring node attributes after applying the whitelist')
+      self.default_attrs = wl_default_attrs
+      self.normal_attrs = wl_normal_attrs
+      self.override_attrs = wl_override_attrs
+      self.automatic_attrs = wl_automatic_attrs
     end
   end
 end
-
